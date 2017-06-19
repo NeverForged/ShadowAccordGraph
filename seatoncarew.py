@@ -11,6 +11,9 @@ def main():
     '''
     G = nx.read_edgelist('data/character_edges.csv', delimiter=',')
     # print len(G.nodes())
+    for node in G.degree():
+        if G.degree(node) <= 1:
+            G.remove_node(node)
     return G
 
 
@@ -25,15 +28,19 @@ def six_degress():
     lst = nx.shortest_path(G, char1, char2)
     ret = ''
     n = len(lst)-1
+    betweenness_centrality = nx.betweenness_centrality(G)
+    #print Counter(betweenness_centrality).most_common(10)
+    bacon = Counter(betweenness_centrality).most_common(1)[0][0]
+    print 'Distance: {}'.format(len(lst))
+    ret = ''
     for i, char in enumerate(lst):
-        if i == 0:
-            wick = nx.shortest_path(G, char1, 'Wick')
-            ret = char + '(Wick Number: ' + str(len(wick) - 1) + ')'
-        elif i == n:
-            wick = nx.shortest_path(G, char2, 'Wick')
-            ret = ret + ", who knows " + char + '(Wick Number: ' + str(len(wick) - 1) + ")."
+        if i == n:
+            bacon_num = len(nx.shortest_path(G, char, bacon))-1
+            ret = ret + '{} ({} Number: {})'.format(char, bacon, bacon_num)
         else:
-            ret = ret + ', who knows ' + char
+            bacon_num = len(nx.shortest_path(G, char, bacon))-1
+            ret = ret + '{} ({} Number: {})'.format(char, bacon, bacon_num)
+            ret = ret + "\n" + "   -knows...\n"
     print ret
 
 
@@ -41,19 +48,20 @@ def make_graph():
     '''
     '''
     G = main()
-    # for node in G.degree():
-    #     if G.degree(node) <= 1:
-    #         G.remove_node(node)
+
     # print len(G.nodes())
     set_pos = nx.spring_layout(G)
     # set_pos = nx.shell_layout(G)
     # set_pos = nx.fruchterman_reingold_layout(G, iterations=100)
     # set_pos = nx.spectral_layout(G, dim=2, weight='weight', scale=1.0, center=None)
 
+
     # Color subgroups...
+    print "finding communities..."
     lst_com = find_communities_modularity(G)
+    print "                   ...{} communities found".format(len(lst_com))
     # lst_com = find_communities_n(G, 5)
-    lst_colors = ['b', 'r', 'g', 'y', 'c', 'm', 'k']
+    lst_colors = ['b', 'r', 'g', 'c', 'm', 'k', 'y']
     # node_color = sequence of colors with the same length as nodelist.
     nodelist_color = G.nodes()
     for i, lst in enumerate(lst_com):
@@ -66,7 +74,7 @@ def make_graph():
                      with_labels=False,
                      node_color=nodelist_color,
                      node_size=400,
-                     alpha=0.25)
+                     alpha=0.33)
     nx.draw_networkx_labels(G,
                             pos=set_pos,
                             font_family='fantasy',
@@ -75,11 +83,17 @@ def make_graph():
     # plt.legend()
 
     degree_centrality = nx.degree_centrality(G)
-    print Counter(degree_centrality).most_common(10)
+    print "Degree Centrality (Most Connections)\n"
+    for name in Counter(degree_centrality).most_common(10):
+        print '    {}\n'.format(name)
     betweenness_centrality = nx.betweenness_centrality(G)
-    print Counter(betweenness_centrality).most_common(10)
+    print "Betweenness Centrality (Most Connections Made Thru)\n"
+    for name in Counter(betweenness_centrality).most_common(10):
+        print '    {}\n'.format(name)
     eigenvector_centrality = nx.eigenvector_centrality(G)
-    print Counter(eigenvector_centrality).most_common(10)
+    print "Eigenvector Centrality (Err... most behind the scenes connected?)\n"
+    for name in Counter(eigenvector_centrality).most_common(10):
+        print '    {}\n'.format(name)
 
     # keep this last
     plt.show()
